@@ -1,6 +1,7 @@
 MINIFIED_SCRIPTS_FILE=minified_scripts.lol
 MINIFIED_STYLES_FILE=minified_styles.lol
 OUTFILE=index.html
+MINIFIER=cat
 
 all: clean assemble_layout
 
@@ -12,10 +13,10 @@ clean:
 	rm -f $(OUTFILE)
 
 assemble_scripts:
-	cat js/*.js > $(MINIFIED_SCRIPTS_FILE)
+	$(MINIFIER) js/*.js > $(MINIFIED_SCRIPTS_FILE)
 
 assemble_styles:
-	cat css/*.css > $(MINIFIED_STYLES_FILE)
+	$(MINIFIER) css/*.css > $(MINIFIED_STYLES_FILE)
 
 assemble_layout: assemble_scripts assemble_styles
 	sed -e 's/%%SCRIPTS_FILENAME%%/$(MINIFIED_SCRIPTS_FILE)/' layout.html \
