@@ -11,6 +11,16 @@ SOBE.init = function() {
 
     var $status = document.getElementById("file-status");
 
+    SOBE.loaded_images = [];
+    SOBE.images.forEach( function( image_name ) {
+
+        var tmpImage = new Image();
+        tmpImage.src = "images/" + image_name;
+        tmpImage.onload = function _loadedImage() {
+            SOBE.loaded_images.push(tmpImage);
+        };
+    });
+
     var $songURL = document.getElementById("song-url");
     var $songPicker = document.getElementById("song-file");
 
