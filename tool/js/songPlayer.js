@@ -34,29 +34,16 @@ SOBE.songPlayer = (function() {
                 var filteredBuffer = res.renderedBuffer;
                 console.log("Filtered.");
 
+
                 function getPeaksAtThreshold(data, threshold) {
                     console.log(JSON.stringify(data,null,4));
                     var buff = data.getChannelData(0);
+                    console.log("Clip length: ", buff.length / data.sampleRate);
                     var quarter_second = Math.floor(data.sampleRate *.25);
                     var peaksArray = [];
-                    var length = data.length;
 
-                    // find rms
-                    buff = [].slice.call(buff);
-                    var xbar = buff.reduce( function (acc, x) { return acc + x; }, 0) / buff.length;
-                    //console.log("Xbar is ", xbar);
-                    var residuals = buff.map(function (x) { return x/xbar;} );
-                    //console.log("Residuals are ", residuals);
-                    var rms = Math.sqrt( residuals.reduce( function (acc, x) { return acc + (x*x);}, 0)/buff.length);
-                    //console.log("RMS is ", rms);
-
-                    var stddev = Math.sqrt( rms - (xbar*xbar));
-                    //console.log("Stddev is ", stddev);
-                    
-                    var buff = data.getChannelData(0);
                     // find peaks
-                    threshold = rms + (threshold * stddev);
-                    for(var i = 0; i < length;) {
+                    for(var i = 0; i < data.length;) {
                         if (buff[i] > threshold) {
                             peaksArray.push(i);
                             // Skip forward ~ 1/4s to get past this peak.
@@ -67,7 +54,41 @@ SOBE.songPlayer = (function() {
                     return peaksArray;
                 }
 
-                console.log(getPeaksAtThreshold( filteredBuffer, 0));
+                var peaks = getPeaksAtThreshold( filteredBuffer, .1);                
+                function countIntervalsBetweenNearbyPeaks(peaks) {
+                      var intervalCounts = [];
+                        peaks.forEach(function(peak, index) {
+                                for(var i = 0; i < 10; i++) {
+                                    var interval = peaks[index + i] - peak;
+                                    var foundInterval = intervalCounts.some(function(intervalCount) {
+                                    if (intervalCount.interval === interval)
+                                        return intervalCount.count++;
+                                    });
+                                    if (!foundInterval) {
+                                        intervalCounts.push({
+                                            interval: interval,
+                                            count: 1
+                                        });
+                                    }
+                                }
+                            });
+                        return intervalCounts;
+                }
+
+                var peakBins = countIntervalsBetweenNearbyPeaks(peaks);
+                var sorted =  peakBins
+                              .sort(function(a,b) { return b.count - a.count;})                              
+                              .slice(0,10)
+                              .map(function(x) { return x.count});
+
+                var guessedBPM = (sorted[0] < .1)? sorted[1] : sorted[0];
+                if (guessedBPM < 90) { 
+                    guessedBPM  *= 2;
+                }
+                if (guessedBPM > 180) {
+                    guessedBPM /= 2;
+                }
+                console.log("Suggested BPM : ", guessedBPM);
             }
         });
     };
