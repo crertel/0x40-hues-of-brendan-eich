@@ -17,6 +17,58 @@ SOBE.songPlayer = (function() {
         context.decodeAudioData( buff, function _onDecoded( buffer ) {
             console.log("Audo decoded.");
             srcbuff = buffer;
+
+            console.log("Calculating BPM");
+            
+            var offlineContext = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
+            var source = offlineContext.createBufferSource();
+            source.buffer = buffer;
+            var filter = offlineContext.createBiquadFilter();
+            filter.type = "lowpass";
+            source.connect(filter);
+            filter.connect(offlineContext.destination);
+            
+            source.start(0);
+            offlineContext.startRendering();
+            offlineContext.oncomplete = function(res) {
+                var filteredBuffer = res.renderedBuffer;
+                console.log("Filtered.");
+
+                function getPeaksAtThreshold(data, threshold) {
+                    console.log(JSON.stringify(data,null,4));
+                    var buff = data.getChannelData(0);
+                    var quarter_second = Math.floor(data.sampleRate *.25);
+                    var peaksArray = [];
+                    var length = data.length;
+
+                    // find rms
+                    buff = [].slice.call(buff);
+                    var xbar = buff.reduce( function (acc, x) { return acc + x; }, 0) / buff.length;
+                    //console.log("Xbar is ", xbar);
+                    var residuals = buff.map(function (x) { return x/xbar;} );
+                    //console.log("Residuals are ", residuals);
+                    var rms = Math.sqrt( residuals.reduce( function (acc, x) { return acc + (x*x);}, 0)/buff.length);
+                    //console.log("RMS is ", rms);
+
+                    var stddev = Math.sqrt( rms - (xbar*xbar));
+                    //console.log("Stddev is ", stddev);
+                    
+                    var buff = data.getChannelData(0);
+                    // find peaks
+                    threshold = rms + (threshold * stddev);
+                    for(var i = 0; i < length;) {
+                        if (buff[i] > threshold) {
+                            peaksArray.push(i);
+                            // Skip forward ~ 1/4s to get past this peak.
+                            i += quarter_second;
+                        }
+                        i++;
+                    }
+                    return peaksArray;
+                }
+
+                console.log(getPeaksAtThreshold( filteredBuffer, 0));
+            }
         });
     };
 
