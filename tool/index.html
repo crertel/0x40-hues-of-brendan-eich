@@ -1,11 +1,41 @@
 <html>
     <head>
         <title>40SOBE</title>
+        <!-- Latest compiled and minified CSS 
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"> -->
         <link rel="stylesheet" href="minified_styles.lol">
         <script src="minified_scripts.lol"></script>
     </head>
     <body>
-<h1>Lol body tag</h1>
+<div class="container">
+    <h1> 40 Shades of Brendan Eich Editor </h1>
+    
+    <input id="song-url" type="text">
+    </input>
+
+    <input id="song-file" type="file">
+    </input>
+    <div id="file-status">
+    </div>
+
+    <button class="btn" id="start-button">Start</button>
+    <button class="btn" id="stop-button">Stop</button>
+
+
+    <a class="btn" id="download-btn" download="song.json">
+        Download the song
+    </a>
+
+    <script>
+        SOBE.init();
+    </script>
+
+
+</div>
+
+
+
+
     </body>
 
 </html>
